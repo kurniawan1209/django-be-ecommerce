@@ -1,0 +1,134 @@
+// user
+
+table user {
+  user_id int [pk, increment]
+  balance int
+}
+
+table areas {
+  area_id int [pk, increment]
+  creation_date date
+  name varchar
+  area_type varchar
+  parent_area_id int
+}
+
+table user_addresses {
+  address_id int [pk, increment]
+  creation_date date
+  city_id number
+  province_id number
+  country_id number
+  address text
+}
+
+table user_balances {
+  balance_id int [pk, increment]
+  creation_date date
+  user_id int
+  balance int
+}
+
+ref: user.user_id < user_balances.user_id
+ref: areas.area_id < areas.parent_area_id
+ref: user_addresses.city_id > areas.area_id
+ref: user_addresses.province_id > areas.area_id
+ref: user_addresses.country_id > areas.area_id
+
+// Product Table
+
+table products as product {
+  product_id number [pk, increment]
+  creation_date date
+  name varchar(100)
+  stock int
+  brand_id int
+  category_id int
+  price int
+  description text
+}
+
+table product_details as prd_detail {
+  product_detail_id number [pk, increment]
+  creation_date date
+  product_id int
+  key varchar
+  value varchar
+}
+
+table product_categories as prd_category {
+  category_id int [pk, increment]
+  creation_date date
+  category_name varchar
+}
+
+table brand {
+  brand_id int [pk, increment]
+  creation_date date
+  name varchar
+  logo varchar
+}
+
+ref: product.product_id < prd_detail.product_id
+ref: product.category_id > prd_category.category_id
+ref: product.brand_id > brand.brand_id
+
+
+// Transaction
+
+table trx_headers {
+  header_id int [pk, increment]
+  creation_date date
+  user_id int
+  trx_type_id int
+  address_id int
+  estimation_date date
+}
+
+table trx_lines {
+  line_id int [pk, increment]
+  creation_date date
+  header_id number
+  product_id number
+  quantity number
+  price number
+}
+
+table trx_types {
+  trx_type_id int [pk, increment]
+  creation_date date
+  name varchar
+}
+
+table journey_types {
+  journey_type_id int [pk, increment]
+  creation_date date
+  name varchar
+}
+
+table trx_journeys {
+  journey_id int [pk, increment]
+  creation_date date
+  header_id number
+  journey_type_id number
+  description number
+}
+
+table trx_reviews {
+  review_id int [pk, increment]
+  creation_date date
+  line_id int
+  user_id int
+  star int
+  comment text
+}
+
+ref: user.user_id < trx_headers.user_id
+ref: trx_headers.header_id < trx_lines.header_id
+ref: trx_lines.line_id - trx_reviews.line_id
+ref: trx_reviews.user_id > user.user_id
+ref: trx_lines.product_id < product.product_id
+ref: trx_headers.trx_type_id > trx_types.trx_type_id
+ref: trx_headers.header_id < trx_journeys.header_id
+ref: trx_journeys.journey_type_id > journey_types.journey_type_id
+ref: trx_headers.address_id > user_addresses.address_id
