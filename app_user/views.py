@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -22,6 +22,23 @@ class LogoutView(APIView):
         except Exception as err:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error"})
         
+class RegisterView(APIView):
+    permission_classes = (AllowAny, )
+    def post(self, request):
+        try:
+            user = User.objects.create_user(username=request.data["username"], password=request.data["password"])
+            user.first_name = request.data["first_name"]
+            user.last_name = request.data["last_name"]
+            user.email = request.data["email"]
+            user.save()
+
+            user_dict = model_to_dict(user)
+            user_dict["password"] = "*********"
+
+            return Response(user_dict, status=201)
+        except Exception as err:
+            print(err)
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"error"})
 
 class UserAddressView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
@@ -73,15 +90,23 @@ class UserDetailsView(viewsets.ModelViewSet):
             user.email = request.data["email"]
             user.save()
             
-            user_detail = {
-                "user": user.id,
-                "gender": request.data["gender"],
-                "birth_date": request.data["birth_date"]
-            }
+            birth_date_filter = "birth_date" in request.data
+            gender_filter = "gender" in request.data
 
-            serializer = UserDetailSerializers(data=user_detail)
-            if serializer.is_valid():
-                serializer.save()
+            if birth_date_filter or gender_filter:
+                user_detail = {
+                    "user": user.id,
+                }
+
+                if birth_date_filter:
+                    user_detail["birth_date"] = request.data.birth_date
+
+                if gender_filter:
+                    user_detail["gender"] = request.data.gender
+
+                serializer = UserDetailSerializers(data=user_detail)
+                if serializer.is_valid():
+                    serializer.save()
 
             result = {
                 "id": user.id,
